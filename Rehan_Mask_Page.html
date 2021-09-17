@@ -1,0 +1,139 @@
+<!doctype html>
+<html>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+<script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"> </script>
+
+<head>
+<title>Mask Detection Model</title>
+  <style>
+  div.background {
+  background: url(https://mrehanali127.github.io/Mask_Detection_Model/background.jpg) repeat;
+  margin: 0px;
+}
+
+div.transbox {
+  margin: 50px;
+  backdrop-filter: initial;
+  background-color: rgb(46, 66, 99,0.5);
+  backdrop-filter: blur(20px);
+  border-radius: 25px;
+  padding: 50px;
+}
+
+label{
+  padding-right:0px;
+  font-size:20px;
+}
+  .buttons{
+  background-color: rgb(102, 94, 133);
+  border: none;
+  border-radius:10px;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+  </style>
+</head>
+
+
+
+<body>
+<div class="background">
+<div class="transbox">
+    <img src="https://mrehanali127.github.io/Mask_Detection_Model/AI.jpg" alt="AI Image" style="width:90%;height:50%;margin:50px;border-radius:100px;">
+    <br/>
+    <h1 style="text-align:center;font-size: 400%;color:white">Face Mask Detection</h1>
+    <br><br>
+<center> 
+<table style="border:none">
+<tr>
+    <td style="border:none;padding:10px"><label style="color:white;" for="image_upload">Kindly upload image for detection:</label></td>
+    <td style="border:none;padding:10px"><input style="color: yellow;" type="file" id="image_upload"/></td>
+    <td style="border:none;"><button class="buttons" id="btn">Make Prediction</button></td>
+    </tr>
+    <tr>
+    <td><br><br></td>
+    </tr>
+    <tr>
+    <td><h2><label style="padding:10px;color:white;"> Result : </label></h2></td>
+    <td><h2 id="result" style="color:white;"></h2></td>
+    <td style="border:none;"><img id="image" src="" ></img></td>
+    
+  </tr>
+</table>
+</center>
+</div>
+</div>
+
+
+
+  <script>
+  var wait = ms => new Promise((r, j)=>setTimeout(r, ms));
+  async function main() {
+        const model = await tf.loadLayersModel('https://mrehanali127.github.io/Mask_Detection_Model/model.json');
+        console.log("Model loaded")
+        document.getElementById('image_upload').onchange = function(ev) {
+          // when button clicked get address of file
+          document.getElementById('btn').onclick=function(){
+            var f = ev.target.files[0];
+            var fr = new FileReader();
+
+
+            var makePrediction = async function(img) {
+                // We need to ensure that the image is actually loaded before we proceed.
+                while(!img.complete) {
+                    await wait(100);
+                }
+
+
+                // processing of Image to make it Valid tensor
+                var tensor = tf.browser.fromPixels(img,numChannels=1)
+                               .resizeBilinear([100,100])
+                               .toFloat()
+                               .expandDims(0);
+                const offset=tf.scalar(255.0);
+                const normalized=tf.scalar(1.0).sub(tensor.div(offset));
+                const batchedImage=normalized;
+                console.log(batchedImage.shape);
+                // give input for prediction
+                const prediction = model.predict(batchedImage);
+                console.log(prediction);
+
+
+                var data = prediction.dataSync();
+                console.log(data);
+                // Which value is greater
+                document.getElementById('result').innerHTML = 
+                    data[0] > data[1] ? "With Mask " : "Without Mask ";
+
+            }
+            // read the file
+            var fileReadComplete = function(ev2) {
+                document.getElementById('image').src = ev2.target.result;
+                var img = new Image();
+                img.src = ev2.target.result;
+                
+                makePrediction(img);
+            };
+
+            fr.onload = fileReadComplete;
+
+            fr.readAsDataURL(f);
+        }
+        }
+        
+    }
+
+    main();
+
+  </script>
+</body>
+
+</html>
